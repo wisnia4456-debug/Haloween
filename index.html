@@ -11,31 +11,143 @@
 <body>
 
 <div class="card">
-  <h1 class="title">Jesteś w środku</h1>
-  <p class="subtitle" id="welcomeText">Zalogowano.</p>
-  <p class="subtitle">Tu w następnym kroku pojawi się lista zadań na imprezę.</p>
-  <button type="button" class="primary" id="logoutBtn">Wyloguj się</button>
+  <h1 class="title" id="formTitle">Wejdź do Huba</h1>
+  <p class="subtitle" id="formSubtitle">Zaloguj się, żeby zobaczyć listę zadań na imprezę.</p>
+
+  <form id="authForm">
+    <div>
+      <label for="fullname">Imię i nazwisko</label>
+      <input type="text" id="fullname" placeholder="Jan Kowalski" required>
+    </div>
+    <div>
+      <label for="password">Hasło</label>
+      <input type="password" id="password" placeholder="min. 6 znaków" required minlength="6">
+    </div>
+    <button type="submit" class="primary" id="submitBtn">Zaloguj się</button>
+    <div class="message" id="message"></div>
+  </form>
+
+  <div class="switch-mode">
+    <span id="switchText">Nie masz konta?</span>
+    <button type="button" id="switchBtn">Załóż konto</button>
+  </div>
 </div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import {
+    getAuth,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    updateProfile,
+    onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import { firebaseConfig } from "./firebase-config.js";
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
 
-  onAuthStateChanged(auth, (user) => {
-    if (!user) {
-      window.location.href = "index.html";
+  let mode = "login"; // "login" | "signup"
+
+  const form = document.getElementById("authForm");
+  const nameInput = document.getElementById("fullname");
+  const passwordInput = document.getElementById("password");
+
+  // Zamienia "Bartek Kowalski", "BARTEK KOWALSKI", "bartek kowałski" itd.
+  // na ten sam identyfikator, żeby logowanie działało niezależnie od
+  // wielkości liter i polskich znaków.
+  function normalizeName(raw) {
+    return raw
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // usuwa ogonki/akcenty (ą->a, ł zostaje osobno niżej)
+      .replace(/ł/g, "l")
+      .replace(/\s+/g, " ");
+  }
+
+  function nameToFakeEmail(raw) {
+    const normalized = normalizeName(raw).replace(/\s+/g, "");
+    return normalized + "@halloween-hub.local";
+  }
+  const submitBtn = document.getElementById("submitBtn");
+  const messageEl = document.getElementById("message");
+  const formTitle = document.getElementById("formTitle");
+  const formSubtitle = document.getElementById("formSubtitle");
+  const switchText = document.getElementById("switchText");
+  const switchBtn = document.getElementById("switchBtn");
+
+  function showMessage(text, type) {
+    messageEl.textContent = text;
+    messageEl.className = "message " + (type || "");
+  }
+
+  function setMode(newMode) {
+    mode = newMode;
+    showMessage("", "");
+    if (mode === "login") {
+      formTitle.textContent = "Wejdź do Huba";
+      formSubtitle.textContent = "Zaloguj się, żeby zobaczyć listę zadań na imprezę.";
+      submitBtn.textContent = "Zaloguj się";
+      switchText.textContent = "Nie masz konta?";
+      switchBtn.textContent = "Załóż konto";
     } else {
-      document.getElementById("welcomeText").textContent = "Zalogowano jako " + (user.displayName || user.email);
+      formTitle.textContent = "Dołącz do ekipy";
+      formSubtitle.textContent = "Załóż konto, żeby dostać dostęp do zadań.";
+      submitBtn.textContent = "Załóż konto";
+      switchText.textContent = "Masz już konto?";
+      switchBtn.textContent = "Zaloguj się";
+    }
+  }
+
+  switchBtn.addEventListener("click", () => {
+    setMode(mode === "login" ? "signup" : "login");
+  });
+
+  function translateError(code) {
+    const map = {
+      "auth/invalid-email": "Wpisz imię i nazwisko (min. 2 znaki, bez samych cyfr).",
+      "auth/email-already-in-use": "Ta osoba już ma konto — zaloguj się.",
+      "auth/weak-password": "Hasło musi mieć min. 6 znaków.",
+      "auth/user-not-found": "Nie ma konta na to imię i nazwisko — załóż je.",
+      "auth/wrong-password": "Złe hasło.",
+      "auth/invalid-credential": "Nie ma takiego konta albo złe hasło.",
+      "auth/too-many-requests": "Za dużo prób. Spróbuj za chwilę."
+    };
+    return map[code] || "Coś poszło nie tak. Spróbuj ponownie.";
+  }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const rawName = nameInput.value;
+    const fakeEmail = nameToFakeEmail(rawName);
+    const password = passwordInput.value;
+
+    submitBtn.disabled = true;
+    showMessage("", "");
+
+    try {
+      if (mode === "login") {
+        await signInWithEmailAndPassword(auth, fakeEmail, password);
+      } else {
+        const cred = await createUserWithEmailAndPassword(auth, fakeEmail, password);
+        // zapisujemy oryginalnie wpisaną pisownię, żeby ładnie wyświetlić w hubie
+        await updateProfile(cred.user, { displayName: rawName.trim() });
+      }
+      // onAuthStateChanged przekieruje do huba
+    } catch (err) {
+      showMessage(translateError(err.code), "error");
+      submitBtn.disabled = false;
     }
   });
 
-  document.getElementById("logoutBtn").addEventListener("click", () => {
-    signOut(auth);
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      window.location.href = "hub.html";
+    }
   });
+
+  setMode("login");
 </script>
 </body>
 </html>
