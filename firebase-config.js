@@ -1,5 +1,4 @@
-// Wklej tutaj konfigurację ze swojego projektu Firebase.
-// Firebase Console -> Ustawienia projektu -> Twoje aplikacje -> SDK setup and configuration
+
 export const firebaseConfig = {
   apiKey: "AIzaSyC-_JSdNbJ4ciLxpu1gjAeLRQs_tSFvvz4",
   authDomain: "halloween-hub.firebaseapp.com",
