@@ -11,121 +11,31 @@
 <body>
 
 <div class="card">
-  <h1 class="title" id="formTitle">Wejdź do Huba</h1>
-  <p class="subtitle" id="formSubtitle">Zaloguj się, żeby zobaczyć listę zadań na imprezę.</p>
-
-  <form id="authForm">
-    <div>
-      <label for="email">E-mail</label>
-      <input type="email" id="email" placeholder="ty@przyklad.pl" required>
-    </div>
-    <div>
-      <label for="password">Hasło</label>
-      <input type="password" id="password" placeholder="min. 6 znaków" required minlength="6">
-    </div>
-    <button type="submit" class="primary" id="submitBtn">Zaloguj się</button>
-    <div class="message" id="message"></div>
-  </form>
-
-  <div class="switch-mode">
-    <span id="switchText">Nie masz konta?</span>
-    <button type="button" id="switchBtn">Załóż konto</button>
-  </div>
+  <h1 class="title">Jesteś w środku</h1>
+  <p class="subtitle" id="welcomeText">Zalogowano.</p>
+  <p class="subtitle">Tu w następnym kroku pojawi się lista zadań na imprezę.</p>
+  <button type="button" class="primary" id="logoutBtn">Wyloguj się</button>
 </div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import {
-    getAuth,
-    createUserWithEmailAndPassword,
-    signInWithEmailAndPassword,
-    onAuthStateChanged
-  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import { firebaseConfig } from "./firebase-config.js";
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
 
-  let mode = "login"; // "login" | "signup"
-
-  const form = document.getElementById("authForm");
-  const emailInput = document.getElementById("email");
-  const passwordInput = document.getElementById("password");
-  const submitBtn = document.getElementById("submitBtn");
-  const messageEl = document.getElementById("message");
-  const formTitle = document.getElementById("formTitle");
-  const formSubtitle = document.getElementById("formSubtitle");
-  const switchText = document.getElementById("switchText");
-  const switchBtn = document.getElementById("switchBtn");
-
-  function showMessage(text, type) {
-    messageEl.textContent = text;
-    messageEl.className = "message " + (type || "");
-  }
-
-  function setMode(newMode) {
-    mode = newMode;
-    showMessage("", "");
-    if (mode === "login") {
-      formTitle.textContent = "Wejdź do Huba";
-      formSubtitle.textContent = "Zaloguj się, żeby zobaczyć listę zadań na imprezę.";
-      submitBtn.textContent = "Zaloguj się";
-      switchText.textContent = "Nie masz konta?";
-      switchBtn.textContent = "Załóż konto";
-    } else {
-      formTitle.textContent = "Dołącz do ekipy";
-      formSubtitle.textContent = "Załóż konto, żeby dostać dostęp do zadań.";
-      submitBtn.textContent = "Załóż konto";
-      switchText.textContent = "Masz już konto?";
-      switchBtn.textContent = "Zaloguj się";
-    }
-  }
-
-  switchBtn.addEventListener("click", () => {
-    setMode(mode === "login" ? "signup" : "login");
-  });
-
-  function translateError(code) {
-    const map = {
-      "auth/invalid-email": "Nieprawidłowy adres e-mail.",
-      "auth/email-already-in-use": "To konto już istnieje — zaloguj się.",
-      "auth/weak-password": "Hasło musi mieć min. 6 znaków.",
-      "auth/user-not-found": "Nie ma takiego konta.",
-      "auth/wrong-password": "Złe hasło.",
-      "auth/invalid-credential": "Złe dane logowania.",
-      "auth/too-many-requests": "Za dużo prób. Spróbuj za chwilę."
-    };
-    return map[code] || "Coś poszło nie tak. Spróbuj ponownie.";
-  }
-
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const email = emailInput.value.trim();
-    const password = passwordInput.value;
-
-    submitBtn.disabled = true;
-    showMessage("", "");
-
-    try {
-      if (mode === "login") {
-        await signInWithEmailAndPassword(auth, email, password);
-      } else {
-        await createUserWithEmailAndPassword(auth, email, password);
-      }
-      // onAuthStateChanged przekieruje do huba
-    } catch (err) {
-      showMessage(translateError(err.code), "error");
-      submitBtn.disabled = false;
-    }
-  });
-
   onAuthStateChanged(auth, (user) => {
-    if (user) {
-      window.location.href = "hub.html";
+    if (!user) {
+      window.location.href = "index.html";
+    } else {
+      document.getElementById("welcomeText").textContent = "Zalogowano jako " + (user.displayName || user.email);
     }
   });
 
-  setMode("login");
+  document.getElementById("logoutBtn").addEventListener("click", () => {
+    signOut(auth);
+  });
 </script>
 </body>
 </html>
