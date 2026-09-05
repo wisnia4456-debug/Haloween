@@ -16,8 +16,12 @@
 
   <form id="authForm">
     <div>
-      <label for="fullname">Imię i nazwisko</label>
-      <input type="text" id="fullname" placeholder="Jan Kowalski" required>
+      <label for="firstname">Imię</label>
+      <input type="text" id="firstname" placeholder="Jan" required>
+    </div>
+    <div>
+      <label for="lastname">Nazwisko</label>
+      <input type="text" id="lastname" placeholder="Kowalski" required>
     </div>
     <div>
       <label for="password">Hasło</label>
@@ -37,6 +41,8 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import {
     getAuth,
+    setPersistence,
+    browserLocalPersistence,
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
     updateProfile,
@@ -46,11 +52,13 @@
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
+  setPersistence(auth, browserLocalPersistence);
 
   let mode = "login"; // "login" | "signup"
 
   const form = document.getElementById("authForm");
-  const nameInput = document.getElementById("fullname");
+  const firstnameInput = document.getElementById("firstname");
+  const lastnameInput = document.getElementById("lastname");
   const passwordInput = document.getElementById("password");
 
   // Zamienia "Bartek Kowalski", "BARTEK KOWALSKI", "bartek kowałski" itd.
@@ -119,7 +127,7 @@
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const rawName = nameInput.value;
+    const rawName = firstnameInput.value.trim() + " " + lastnameInput.value.trim();
     const fakeEmail = nameToFakeEmail(rawName);
     const password = passwordInput.value;
 
@@ -141,9 +149,11 @@
     }
   });
 
+  let redirected = false;
   onAuthStateChanged(auth, (user) => {
-    if (user) {
-      window.location.href = "hub.html";
+    if (user && !redirected) {
+      redirected = true;
+      window.location.replace("hub.html");
     }
   });
 
