@@ -1,10 +1,10 @@
 // Wklej tutaj konfigurację ze swojego projektu Firebase.
 // Firebase Console -> Ustawienia projektu -> Twoje aplikacje -> SDK setup and configuration
 export const firebaseConfig = {
-  apiKey: "TWOJ_API_KEY",
-  authDomain: "TWOJ_PROJEKT.firebaseapp.com",
-  projectId: "TWOJ_PROJEKT",
-  storageBucket: "TWOJ_PROJEKT.appspot.com",
-  messagingSenderId: "TWOJ_SENDER_ID",
-  appId: "TWOJ_APP_ID"
+  apiKey: "AIzaSyC-_JSdNbJ4ciLxpu1gjAeLRQs_tSFvvz4",
+  authDomain: "halloween-hub.firebaseapp.com",
+  projectId: "halloween-hub",
+  storageBucket: "halloween-hub.firebasestorage.app",
+  messagingSenderId: "407346976970",
+  appId: "1:407346976970:web:7587e3d4f7a51d163e3c33"
 };
